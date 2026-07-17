@@ -28,9 +28,11 @@ fun ResultScreen(
     testResults: List<TestResult>,
     performanceDegradation: Float,
     durationMs: Long,
+    isUsedPhoneMode: Boolean = false,
     onBackClicked: () -> Unit,
     onViewDetailsClicked: () -> Unit,
     onShareClicked: () -> Unit,
+    onRunAgainClicked: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
@@ -39,7 +41,7 @@ fun ResultScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Test Result") },
+                title = { Text(if (isUsedPhoneMode) "Used Phone Check Result" else "Test Result") },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primary,
                     titleContentColor = MaterialTheme.colorScheme.onPrimary
@@ -179,7 +181,7 @@ fun ResultScreen(
                             icon = Icons.Default.TrendingDown,
                             title = "Performance Degradation",
                             message = "Lost ${performanceDegradation.toInt()}% performance under load",
-                            status = if (performanceDegradation < 20) TestResult.TestResultStatus.PASS else TestResult.TestResultStatus.ATTENTION
+                            status = if (performanceDegradation < 20) com.phonecheck.data.model.TestResultStatus.PASS else com.phonecheck.data.model.TestResultStatus.ATTENTION
                         )
                     }
                 }
@@ -224,24 +226,27 @@ fun ResultScreen(
                     .padding(horizontal = 16.dp),
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                OutlinedButton(
-                    onClick = onViewDetailsClicked,
-                    modifier = Modifier.weight(1f)
+                Button(
+                    onClick = onRunAgainClicked,
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary
+                    )
                 ) {
                     Icon(
-                        Icons.Default.List,
+                        Icons.Default.Refresh,
                         contentDescription = null,
                         modifier = Modifier.size(18.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Details")
+                    Text("Run Again")
                 }
                 
-                Button(
+                OutlinedButton(
                     onClick = onShareClicked,
                     modifier = Modifier.weight(1f),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.secondary
+                    colors = OutlinedButtonDefaults.outlinedButtonColors(
+                        contentColor = MaterialTheme.colorScheme.secondary
                     )
                 ) {
                     Icon(
@@ -416,12 +421,5 @@ private fun getExplanationForStatus(status: DeviceStatus, degradation: Float): S
         } else if (degradation > 15) {
             append(" Normal thermal behavior observed during testing.")
         }
-    }
-}
-
-// Need to reference TestResultStatus from the data model
-private object TestResult {
-    enum class TestResultStatus {
-        PASS, ATTENTION, NOT_VERIFIED, UNSUPPORTED, USER_CONFIRMED
     }
 }

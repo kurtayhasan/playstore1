@@ -12,7 +12,10 @@ import kotlinx.coroutines.flow.asStateFlow
  * It manages the test list, runs tests sequentially or in parallel where safe,
  * and aggregates results for the ScoreEngine.
  */
-class TestEngine(private val context: Context) {
+class TestEngine(
+    private val context: Context,
+    private val performanceEngine: PerformanceEngine
+) {
     
     private val _testResults = MutableStateFlow<List<TestResult>>(emptyList())
     val testResults: StateFlow<List<TestResult>> = _testResults.asStateFlow()
@@ -25,6 +28,9 @@ class TestEngine(private val context: Context) {
     
     private val _progress = MutableStateFlow(0f)
     val progress: StateFlow<Float> = _progress.asStateFlow()
+    
+    private var _performanceResult: PerformanceStabilityResult? = null
+    val performanceResult: PerformanceStabilityResult? get() = _performanceResult
     
     // All available tests
     private val allTests: List<DeviceTest> by lazy {
@@ -54,9 +60,16 @@ class TestEngine(private val context: Context) {
     
     /**
      * Run the full 5-minute health check.
+     * Includes hardware tests + performance stability test.
      */
     suspend fun runFullCheck(): List<TestResult> {
-        return runTests(allTests)
+        val hardwareResults = runTests(allTests)
+        
+        // Run performance stability test after hardware checks
+        _currentTest.value = "Performance Stability"
+        _performanceResult = performanceEngine.runStabilityTest()
+        
+        return hardwareResults
     }
     
     /**
@@ -152,7 +165,13 @@ class TestEngine(private val context: Context) {
         _testResults.value = emptyList()
         _progress.value = 0f
         _currentTest.value = null
+        _performanceResult = null
     }
+    
+    /**
+     * Get the performance stability result after running full check.
+     */
+    fun getPerformanceResult(): PerformanceStabilityResult? = _performanceResult
     
     /**
      * Get estimated total duration for all tests.
