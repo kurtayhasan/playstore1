@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">PhoneCheck</string>
+    <string name="run_check">Run 5-Minute Check</string>
+    <string name="used_phone_mode">Used Phone Check</string>
+    <string name="phone_health_score">Device Check Score</string>
+    <string name="performance_stability">Performance Stability</string>
+    <string name="hardware_check">Hardware Check</string>
+    <string name="battery_status">Battery Status</string>
+    <string name="system_readiness">System Readiness</string>
+    <string name="what_we_found">What We Found</string>
+    <string name="what_this_means">What This Means</string>
+    <string name="view_technical_details">View Technical Details</string>
+    <string name="share_result">Share Result</string>
+    <string name="test_passed">Passed</string>
+    <string name="test_attention">Attention</string>
+    <string name="test_not_verified">Not Verified</string>
+    <string name="test_unsupported">Unsupported</string>
+    <string name="test_user_confirmed">User Confirmed</string>
+    <string name="excellent">Excellent</string>
+    <string name="good">Good</string>
+    <string name="attention">Attention</string>
+    <string name="check_needed">Check Needed</string>
+    <string name="automatically_verified">Automatically Verified</string>
+    <string name="user_confirmed">User Confirmed</string>
+    <string name="not_available_on_this_device">Not Available on This Device</string>
+    <string name="test_duration">Test Duration</string>
+    <string name="tested_on">Tested on</string>
+    <string name="date">Date</string>
+    <string name="pass">PASS</string>
+    <string name="check">CHECK</string>
+    <string name="not_verified">NOT VERIFIED</string>
+</resources>
