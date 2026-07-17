@@ -1,6 +1,5 @@
 package com.phonecheck.ui.screens.test
 
-import androidx.compose.animation.core.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -10,9 +9,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.phonecheck.data.model.DeviceScore
+import com.phonecheck.data.model.DeviceStatus
+import com.phonecheck.data.model.PerformanceStabilityResult
 import com.phonecheck.data.model.TestResult
-import com.phonecheck.data.model.TestResultStatus
+import com.phonecheck.data.model.TestSession
+import com.phonecheck.data.repository.TestSessionRepository
+import com.phonecheck.data.repository.toEntity
+import com.phonecheck.domain.engine.TestEngine
+import com.phonecheck.domain.score.ScoreEngine
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -183,13 +190,13 @@ fun TestRunningScreen(
 }
 
 @Composable
-private fun StatusBadge(status: TestResultStatus) {
+private fun StatusBadge(status: com.phonecheck.data.model.TestResultStatus) {
     val (text, color) = when (status) {
-        TestResultStatus.PASS -> "✓" to MaterialTheme.colorScheme.primary
-        TestResultStatus.ATTENTION -> "!" to MaterialTheme.colorScheme.error
-        TestResultStatus.NOT_VERIFIED -> "?" to MaterialTheme.colorScheme.outline
-        TestResultStatus.UNSUPPORTED -> "-" to MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
-        TestResultStatus.USER_CONFIRMED -> "✓" to MaterialTheme.colorScheme.secondary
+        com.phonecheck.data.model.TestResultStatus.PASS -> "✓" to MaterialTheme.colorScheme.primary
+        com.phonecheck.data.model.TestResultStatus.ATTENTION -> "!" to MaterialTheme.colorScheme.error
+        com.phonecheck.data.model.TestResultStatus.NOT_VERIFIED -> "?" to MaterialTheme.colorScheme.outline
+        com.phonecheck.data.model.TestResultStatus.UNSUPPORTED -> "-" to MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
+        com.phonecheck.data.model.TestResultStatus.USER_CONFIRMED -> "✓" to MaterialTheme.colorScheme.secondary
     }
     
     Surface(
@@ -210,3 +217,61 @@ private fun StatusBadge(status: TestResultStatus) {
 @Suppress("DEPRECATION")
 private fun String.capitalize(): String = 
     replaceFirstChar { if (it.isLowerCase()) it.titlecase() else it.toString() }
+
+
+/**
+ * Wrapper that handles the test execution logic and navigation callbacks
+ */
+@Composable
+fun TestRunningScreenWrapper(
+    testEngine: TestEngine,
+    scoreEngine: ScoreEngine,
+    sessionRepository: TestSessionRepository,
+    isUsedPhoneMode: Boolean = false,
+    onComplete: (DeviceScore, DeviceStatus, List<TestResult>, PerformanceStabilityResult?, Long) -> Unit,
+    onBack: () -> Unit
+) {
+    val scope = rememberCoroutineScope()
+    var completed by remember { mutableStateOf(false) }
+    var startTime by remember { mutableStateOf(0L) }
+    
+    LaunchedEffect(Unit) {
+        startTime = System.currentTimeMillis()
+        
+        // Run the full check
+        testEngine.runFullCheck()
+        
+        // Calculate score
+        val performanceResult = testEngine.getPerformanceResult()
+        val score = scoreEngine.calculateScore(testEngine.testResults.value, performanceResult)
+        val status = scoreEngine.scoreToStatus(score.overall)
+        
+        val durationMs = System.currentTimeMillis() - startTime
+        
+        // Save session to Room
+        val session = TestSession(
+            timestamp = System.currentTimeMillis(),
+            durationMs = durationMs,
+            overallScore = score.overall,
+            deviceStatus = status,
+            passedTests = score.breakdown.passedTests,
+            totalTests = score.breakdown.totalTests,
+            deviceModel = android.os.Build.MODEL ?: "Unknown",
+            androidVersion = android.os.Build.VERSION.RELEASE ?: "Unknown",
+            isUsedPhoneMode = isUsedPhoneMode,
+            testResults = testEngine.testResults.value
+        )
+        
+        sessionRepository.saveSession(session.toEntity())
+        
+        completed = true
+        onComplete(score, status, testEngine.testResults.value, performanceResult, durationMs)
+    }
+    
+    TestRunningScreen(
+        currentTest = testEngine.currentTest,
+        progress = testEngine.progress,
+        testResults = testEngine.testResults,
+        isRunning = testEngine.isRunning
+    )
+}

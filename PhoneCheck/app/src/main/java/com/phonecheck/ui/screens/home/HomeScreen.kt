@@ -12,21 +12,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import com.phonecheck.domain.engine.TestEngine
-import com.phonecheck.domain.score.ScoreEngine
-import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
-    testEngine: TestEngine,
-    scoreEngine: ScoreEngine,
     onRunCheckClicked: () -> Unit,
     onUsedPhoneModeClicked: () -> Unit,
     onViewHistoryClicked: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val scope = rememberCoroutineScope()
     val deviceModel = Build.MODEL ?: "Unknown Device"
     val manufacturer = Build.MANUFACTURER ?: "Unknown"
     
@@ -136,6 +130,18 @@ fun HomeScreen(
                     .height(56.dp)
             ) {
                 Text(text = "BUY OR SELL A USED PHONE")
+            }
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            // History button
+            TextButton(
+                onClick = onViewHistoryClicked,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Icon(Icons.Default.Info, contentDescription = null, modifier = Modifier.size(18.dp))
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("View Test History")
             }
             
             Spacer(modifier = Modifier.height(32.dp))
